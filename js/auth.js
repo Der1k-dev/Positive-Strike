@@ -46,6 +46,7 @@ export async function ensureUserProfile(user) {
     await set(userRef, {
       nickname: defaultNickname,
       email: user.email || '',
+      avatarId: null,
       createdAt: Date.now(),
       stats: { wins: 0, losses: 0 },
       matchHistory: {},
@@ -58,6 +59,11 @@ export async function ensureUserProfile(user) {
 
 export async function updateNickname(uid, nickname) {
   await update(ref(db, `users/${uid}`), { nickname });
+}
+
+export async function updateAvatarId(uid, avatarId) {
+  // avatarId === null означає "використовувати фото з Google-акаунта".
+  await update(ref(db, `users/${uid}`), { avatarId });
 }
 
 /**
