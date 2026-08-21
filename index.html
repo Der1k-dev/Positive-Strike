@@ -73,10 +73,35 @@
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cabinetModalTitle">
       <button class="modal-close" id="cabinetModalClose" type="button" aria-label="Закрити">✕</button>
       <h2 id="cabinetModalTitle">Особистий кабінет</h2>
-      <p class="modal-text">
-        Вхід через Google, зміна нікнейму та історія матчів зʼявляться на кроці 2,
-        коли підключимо Firebase Authentication.
-      </p>
+
+      <div id="cabinetSignedOut">
+        <p class="modal-text">Увійдіть через Google, щоб зберігати нікнейм і бачити історію матчів.</p>
+        <button class="cta-btn google-btn" id="googleSignInBtn" type="button">
+          Увійти через Google
+        </button>
+        <p class="auth-error" id="authError" role="alert" hidden></p>
+      </div>
+
+      <div id="cabinetSignedIn" hidden>
+        <div class="profile-row">
+          <img class="profile-avatar" id="profileAvatar" alt="" src="">
+          <p class="profile-email" id="profileEmail"></p>
+        </div>
+
+        <label class="field-label" for="nicknameInput">Нікнейм</label>
+        <div class="nickname-row">
+          <input class="nickname-input" id="nicknameInput" type="text" maxlength="20">
+          <button class="save-btn" id="saveNicknameBtn" type="button">Зберегти</button>
+        </div>
+        <p class="nickname-status" id="nicknameStatus" hidden></p>
+
+        <h3 class="history-title">Історія матчів</h3>
+        <ul class="history-list" id="historyList">
+          <li class="history-empty">Матчів ще не було.</li>
+        </ul>
+
+        <button class="signout-btn" id="signOutBtn" type="button">Вийти з акаунта</button>
+      </div>
     </div>
   </div>
 
