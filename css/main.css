@@ -10,6 +10,9 @@
   --red: #d6473f;
   --gold: #c9a227;
   --gold-bright: #e0b93a;
+  --teal: #2fa88a;
+  --purple: #8f6fd9;
+  --orange: #d9873f;
   --font-display: 'Chakra Petch', sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;
   --font-body: 'Inter', sans-serif;
@@ -424,15 +427,23 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 14px;
 }
 
-.profile-avatar {
+.profile-avatar-slot {
   width: 40px;
   height: 40px;
+  flex-shrink: 0;
   border-radius: 50%;
+  overflow: hidden;
   background: var(--blue-dim);
+}
+
+.profile-avatar-img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .profile-email {
@@ -441,6 +452,87 @@ body {
   color: var(--text-muted);
   word-break: break-all;
 }
+
+.change-avatar-btn {
+  display: inline-block;
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: border-color 0.15s ease;
+}
+
+.change-avatar-btn:hover { border-color: var(--blue); }
+.change-avatar-btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+.avatar-picker {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 14px;
+  margin: -10px 0 20px;
+  background: #0d1319;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+}
+
+.avatar-picker[hidden] {
+  display: none;
+}
+
+.avatar-option {
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 2px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease, border-color 0.15s ease;
+}
+
+.avatar-option img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+.avatar-option:hover { transform: scale(1.08); }
+.avatar-option:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+.avatar-option.is-selected {
+  border-color: var(--text);
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--blue);
+}
+
+/* Shape + color combos, shared by the picker grid and the profile slot. */
+
+.avatar-emblem { border-radius: 0; }
+
+.avatar-emblem--pentagon { clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); }
+.avatar-emblem--hexagon { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); }
+.avatar-emblem--diamond { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
+.avatar-emblem--shield { clip-path: polygon(50% 0%, 100% 20%, 100% 60%, 50% 100%, 0% 60%, 0% 20%); }
+.avatar-emblem--triangle { clip-path: polygon(50% 0%, 100% 100%, 0% 100%); }
+.avatar-emblem--circle { border-radius: 50%; }
+
+.avatar-emblem--blue { background: var(--blue); }
+.avatar-emblem--red { background: var(--red); }
+.avatar-emblem--gold { background: var(--gold); }
+.avatar-emblem--teal { background: var(--teal); }
+.avatar-emblem--purple { background: var(--purple); }
+.avatar-emblem--orange { background: var(--orange); }
 
 .field-label {
   display: block;
