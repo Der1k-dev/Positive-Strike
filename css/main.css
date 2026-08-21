@@ -20,6 +20,12 @@
 
 * { box-sizing: border-box; }
 
+/* [hidden] мусить перемагати будь-який display: flex/grid на тому ж елементі —
+   інакше приховані по class-based display компоненти "протікають" крізь hidden. */
+[hidden] {
+  display: none !important;
+}
+
 html, body {
   margin: 0;
   height: 100%;
@@ -232,6 +238,7 @@ body {
 .cta-btn:hover { background: var(--gold-bright); }
 .cta-btn:active { transform: translateY(1px); }
 .cta-btn:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 2px; }
+.cta-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .room-code-box {
   margin-top: 20px;
@@ -303,6 +310,15 @@ body {
   animation: pulse 1.4s ease-in-out infinite;
 }
 
+.room-code-status--ready {
+  color: var(--teal);
+}
+
+.room-code-status--ready::before {
+  background: var(--teal);
+  animation: none;
+}
+
 @keyframes pulse {
   0%, 100% { opacity: 0.35; }
   50% { opacity: 1; }
@@ -311,6 +327,22 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .room-code-status::before { animation: none; }
 }
+
+.cancel-room-btn {
+  width: 100%;
+  margin-top: 14px;
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  color: var(--text-muted);
+  font-size: 12px;
+  border-radius: 6px;
+  padding: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.cancel-room-btn:hover { border-color: var(--red); color: var(--red); }
+.cancel-room-btn:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 
 .join-form {
   display: flex;
@@ -361,10 +393,6 @@ body {
   align-items: center;
   justify-content: center;
   padding: 20px;
-}
-
-.modal-backdrop[hidden] {
-  display: none;
 }
 
 .modal {
@@ -479,10 +507,6 @@ body {
   background: #0d1319;
   border: 1px solid var(--panel-border);
   border-radius: 8px;
-}
-
-.avatar-picker[hidden] {
-  display: none;
 }
 
 .avatar-option {
