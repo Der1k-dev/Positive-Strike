@@ -45,6 +45,7 @@
             <button class="copy-btn" id="copyCodeBtn" type="button" aria-label="Скопіювати код">Копіювати</button>
           </div>
           <p class="room-code-status" id="roomStatus">Очікування другого гравця…</p>
+          <button class="cancel-room-btn" id="cancelRoomBtn" type="button">Скасувати кімнату</button>
         </div>
       </section>
 
@@ -60,9 +61,16 @@
             placeholder="A1B2C3"
             aria-label="Код кімнати"
           >
-          <button class="cta-btn" type="submit">Приєднатися</button>
+          <button class="cta-btn" id="joinSubmitBtn" type="submit">Приєднатися</button>
         </form>
         <p class="join-error" id="joinError" role="alert" hidden></p>
+
+        <div class="room-code-box" id="joinedBox" hidden>
+          <span class="room-code-label">Ви в кімнаті</span>
+          <p class="room-code-status room-code-status--ready" id="joinedStatus">
+            Приєднано! Очікуємо початку бою — з'явиться на наступних кроках.
+          </p>
+        </div>
       </section>
     </div>
 
