@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Positive Strike — карта бою</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+
+  <div class="radar-field" aria-hidden="true"></div>
+
+  <header class="game-topbar">
+    <div class="game-topbar-left">
+      <a class="back-link" href="index.html">← До меню</a>
+      <span class="room-code-chip" id="roomCodeChip" hidden></span>
+    </div>
+    <div class="brand">
+      <span class="brand-mark"></span>
+      <span class="brand-name">POSITIVE&nbsp;STRIKE</span>
+    </div>
+  </header>
+
+  <main class="game-stage">
+    <div class="map-frame">
+      <div class="scene-container" id="sceneContainer"></div>
+    </div>
+
+    <div class="map-toolbar">
+      <div class="map-legend" id="mapLegend"></div>
+      <div class="map-actions">
+        <span class="seed-note" id="seedNote"></span>
+        <button class="regen-btn" id="regenBtn" type="button">Нова випадкова карта</button>
+      </div>
+    </div>
+
+    <p class="game-note">
+      Крок 4 з 10 · 3D-карта. Та сама кімната завжди показує однаковий рельєф
+      (детермінована генерація за кодом кімнати). Обертайте камеру мишкою/пальцем,
+      колесо миші — зум. Юніти, будівлі, економіка й бій — на наступних кроках.
+    </p>
+  </main>
+
+  <script type="module">
+    import { initGame } from './js/game/gameLoop.js';
+    import { BIOME_COLORS, BIOME_LABELS, BIOME_LEGEND_ORDER } from './js/data/terrainDefinitions.js';
+    import { generateMapSeed } from './js/game/mapGenerator.js';
+    // rooms.js (і, відповідно, Firebase) підвантажується динамічно, лише якщо
+    // в URL є код кімнати — сторінка карти не повинна залежати від мережі/Firebase
+    // у тестовому режимі без кімнати.
+
+    const sceneContainer = document.getElementById('sceneContainer');
+    const legendEl = document.getElementById('mapLegend');
+    const seedNoteEl = document.getElementById('seedNote');
+    const regenBtn = document.getElementById('regenBtn');
+    const roomCodeChip = document.getElementById('roomCodeChip');
+
+    // Легенда типів місцевості.
+    for (const id of BIOME_LEGEND_ORDER) {
+      const hex = '#' + BIOME_COLORS[id].toString(16).padStart(6, '0');
+      const item = document.createElement('span');
+      item.className = 'legend-item';
+      item.innerHTML = `<span class="legend-swatch" style="background:${hex}"></span>${BIOME_LABELS[id]}`;
+      legendEl.appendChild(item);
+    }
+
+    const params = new URLSearchParams(location.search);
+    const roomCode = params.get('code');
+
+    let currentGame = null;
+
+    function startWithSeed(seed) {
+      if (currentGame) currentGame.dispose();
+      seedNoteEl.textContent = `Seed: ${seed}`;
+      currentGame = initGame(sceneContainer, seed);
+    }
+
+    async function init() {
+      if (roomCode) {
+        roomCodeChip.textContent = `Кімната: ${roomCode}`;
+        roomCodeChip.hidden = false;
+        regenBtn.hidden = true; // карта кімнати фіксована — регенерація лише для тестового режиму
+
+        try {
+          const { getRoomOnce } = await import('./js/rooms.js');
+          const room = await getRoomOnce(roomCode);
+          if (room && typeof room.mapSeed === 'number') {
+            startWithSeed(room.mapSeed);
+            return;
+          }
+        } catch (err) {
+          console.error('Failed to load room for map seed:', err);
+        }
+        // Кімнату не знайдено, нема mapSeed, або немає мережі — все одно показуємо карту.
+        startWithSeed(generateMapSeed());
+        return;
+      }
+
+      // Тестовий режим без кімнати: seed із URL (?seed=123) або випадковий.
+      const seedParam = params.get('seed');
+      startWithSeed(seedParam ? Number(seedParam) : generateMapSeed());
+    }
+
+    regenBtn.addEventListener('click', () => {
+      startWithSeed(generateMapSeed());
+    });
+
+    init();
+  </script>
+</body>
+</html>
