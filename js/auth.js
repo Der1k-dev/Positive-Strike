@@ -5,6 +5,7 @@ import { auth, db } from './firebase-config.js';
 import {
   GoogleAuthProvider,
   signInWithPopup,
+  signInAnonymously,
   signOut,
   onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -31,6 +32,36 @@ export function signOutUser() {
  */
 export function watchAuthState(callback) {
   return onAuthStateChanged(auth, callback);
+}
+
+/**
+ * Гарантує, що є хоч якийсь ідентифікатор користувача для дій із кімнатами,
+ * без вимоги логінитись через Google. Якщо людина вже увійшла (Google) —
+ * використовується цей акаунт. Якщо ні — Firebase непомітно створює
+ * анонімну сесію (без будь-якої форми чи кнопки для користувача).
+ * Це потрібно, щоб Security Rules бази даних могли відрізняти
+ * "хтось" від "будь-хто в інтернеті без обмежень".
+ */
+export function ensureAnonymousSession() {
+  return new Promise((resolve, reject) => {
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      async (user) => {
+        unsubscribe();
+        if (user) {
+          resolve(user);
+          return;
+        }
+        try {
+          const credential = await signInAnonymously(auth);
+          resolve(credential.user);
+        } catch (err) {
+          reject(err);
+        }
+      },
+      reject
+    );
+  });
 }
 
 /**
