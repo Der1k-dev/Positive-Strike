@@ -5,6 +5,7 @@ import {
   watchAuthState,
   ensureUserProfile,
   updateNickname,
+  updateAvatarId,
   getMatchHistory,
 } from './auth.js';
 
@@ -92,7 +93,9 @@ const cabinetSignedIn = document.getElementById('cabinetSignedIn');
 const googleSignInBtn = document.getElementById('googleSignInBtn');
 const authError = document.getElementById('authError');
 
-const profileAvatar = document.getElementById('profileAvatar');
+const profileAvatarSlot = document.getElementById('profileAvatarSlot');
+const changeAvatarBtn = document.getElementById('changeAvatarBtn');
+const avatarPicker = document.getElementById('avatarPicker');
 const profileEmail = document.getElementById('profileEmail');
 const nicknameInput = document.getElementById('nicknameInput');
 const saveNicknameBtn = document.getElementById('saveNicknameBtn');
@@ -142,6 +145,85 @@ googleSignInBtn.addEventListener('click', async () => {
 
 signOutBtn.addEventListener('click', async () => {
   await signOutUser();
+});
+
+// ---------- Аватар ----------
+
+const AVATAR_OPTIONS = [
+  { id: 'pentagon-blue', shape: 'pentagon', color: 'blue' },
+  { id: 'hexagon-red', shape: 'hexagon', color: 'red' },
+  { id: 'diamond-gold', shape: 'diamond', color: 'gold' },
+  { id: 'shield-teal', shape: 'shield', color: 'teal' },
+  { id: 'triangle-purple', shape: 'triangle', color: 'purple' },
+  { id: 'circle-orange', shape: 'circle', color: 'orange' },
+  { id: 'hexagon-blue', shape: 'hexagon', color: 'blue' },
+  { id: 'shield-red', shape: 'shield', color: 'red' },
+];
+
+function renderAvatarSlot(avatarId, photoURL) {
+  profileAvatarSlot.innerHTML = '';
+  profileAvatarSlot.className = 'profile-avatar-slot';
+
+  if (!avatarId && photoURL) {
+    const img = document.createElement('img');
+    img.src = photoURL;
+    img.alt = '';
+    img.className = 'profile-avatar-img';
+    profileAvatarSlot.appendChild(img);
+    return;
+  }
+
+  const [shape, color] = (avatarId || 'pentagon-blue').split('-');
+  profileAvatarSlot.classList.add('avatar-emblem', `avatar-emblem--${shape}`, `avatar-emblem--${color}`);
+}
+
+function buildAvatarPicker(photoURL, selectedId) {
+  avatarPicker.innerHTML = '';
+
+  if (photoURL) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'avatar-option';
+    btn.dataset.avatarId = '';
+    if (!selectedId) btn.classList.add('is-selected');
+    const img = document.createElement('img');
+    img.src = photoURL;
+    img.alt = 'Фото Google-акаунта';
+    btn.appendChild(img);
+    avatarPicker.appendChild(btn);
+  }
+
+  for (const opt of AVATAR_OPTIONS) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `avatar-option avatar-emblem avatar-emblem--${opt.shape} avatar-emblem--${opt.color}`;
+    btn.dataset.avatarId = opt.id;
+    btn.setAttribute('aria-label', `Емблема: ${opt.shape}, ${opt.color}`);
+    if (selectedId === opt.id) btn.classList.add('is-selected');
+    avatarPicker.appendChild(btn);
+  }
+}
+
+changeAvatarBtn.addEventListener('click', () => {
+  avatarPicker.hidden = !avatarPicker.hidden;
+  changeAvatarBtn.textContent = avatarPicker.hidden ? 'Змінити аватар' : 'Сховати варіанти';
+});
+
+avatarPicker.addEventListener('click', async (event) => {
+  const btn = event.target.closest('.avatar-option');
+  if (!btn || !currentUser) return;
+
+  const avatarId = btn.dataset.avatarId || null;
+
+  [...avatarPicker.children].forEach((c) => c.classList.remove('is-selected'));
+  btn.classList.add('is-selected');
+  renderAvatarSlot(avatarId, currentUser.photoURL);
+
+  try {
+    await updateAvatarId(currentUser.uid, avatarId);
+  } catch (err) {
+    console.error('Avatar update failed:', err);
+  }
 });
 
 // ---------- Зміна нікнейму ----------
@@ -208,11 +290,13 @@ watchAuthState(async (user) => {
 
   cabinetSignedOut.hidden = true;
   cabinetSignedIn.hidden = false;
+  avatarPicker.hidden = true;
+  changeAvatarBtn.textContent = 'Змінити аватар';
 
   try {
     const profile = await ensureUserProfile(user);
-    profileAvatar.src = user.photoURL || '';
-    profileAvatar.alt = profile.nickname || '';
+    renderAvatarSlot(profile.avatarId, user.photoURL);
+    buildAvatarPicker(user.photoURL, profile.avatarId);
     profileEmail.textContent = user.email || '';
     nicknameInput.value = profile.nickname || '';
 
