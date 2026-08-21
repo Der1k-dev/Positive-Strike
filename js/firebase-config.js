@@ -9,6 +9,7 @@ import { getDatabase } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-
 const firebaseConfig = {
   apiKey: "AIzaSyACRp160rx6aZD4FYuXSVhROKS9I0g5q-w",
   authDomain: "positive-strike.firebaseapp.com",
+  databaseURL: "https://positive-strike-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "positive-strike",
   storageBucket: "positive-strike.firebasestorage.app",
   messagingSenderId: "787238507992",
