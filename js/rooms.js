@@ -1,17 +1,26 @@
 // rooms.js
-// ЕТАП 1: локальна заглушка без бекенду.
-// На кроці 3 функції createRoom/joinRoom буде переписано так,
-// щоб вони писали/читали кімнати у Firebase Realtime Database,
-// а не просто генерували код на клієнті.
+// Кімнати зберігаються в Realtime Database: rooms/{code}.
+// Гра можлива без Google-акаунта — ensureAnonymousSession() (з auth.js)
+// непомітно видає анонімний uid, якщо людина не залогінена.
+
+import { db } from './firebase-config.js';
+import { ensureAnonymousSession } from './auth.js';
+import {
+  ref,
+  get,
+  set,
+  update,
+  remove,
+  onValue,
+  onDisconnect,
+  off,
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // без 0/O/1/I, щоб не плутати
 const CODE_LENGTH = 6;
+const CODE_GENERATION_ATTEMPTS = 5;
 
-/**
- * Генерує локальний код кімнати.
- * TODO(крок 3): замінити на запис у Firebase і повернення реального roomId.
- */
-export function generateRoomCode() {
+function generateCode() {
   let code = '';
   for (let i = 0; i < CODE_LENGTH; i++) {
     code += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
@@ -19,31 +28,89 @@ export function generateRoomCode() {
   return code;
 }
 
-/**
- * Створити кімнату (поки що суто локально, без збереження на сервері).
- * TODO(крок 3): Firebase set() у rooms/{code} з полями host/status/mapSeed.
- */
-export function createRoom() {
-  const code = generateRoomCode();
-  return { code, createdAt: Date.now() };
-}
-
-/**
- * Перевірка формату коду перед спробою приєднання.
- * Реальна перевірка існування кімнати з'явиться разом із Firebase.
- */
 export function isValidCodeFormat(code) {
   return typeof code === 'string' && code.trim().length === CODE_LENGTH;
 }
 
 /**
- * Приєднатися до кімнати за кодом.
- * TODO(крок 3): реальний пошук кімнати у Firebase, помилка "кімнату не знайдено".
+ * Створює кімнату в базі даних і повертає { code, uid }.
+ * Кімнату буде автоматично прибрано, якщо хост закриє вкладку
+ * до того, як приєднається другий гравець (onDisconnect).
  */
-export function joinRoom(code) {
-  if (!isValidCodeFormat(code)) {
+export async function createRoom() {
+  const user = await ensureAnonymousSession();
+
+  let code = null;
+  for (let attempt = 0; attempt < CODE_GENERATION_ATTEMPTS; attempt++) {
+    const candidate = generateCode();
+    const snapshot = await get(ref(db, `rooms/${candidate}`));
+    if (!snapshot.exists()) {
+      code = candidate;
+      break;
+    }
+  }
+  if (!code) {
+    throw new Error('Не вдалося згенерувати унікальний код, спробуйте ще раз');
+  }
+
+  const roomRef = ref(db, `rooms/${code}`);
+  await set(roomRef, {
+    hostId: user.uid,
+    guestId: null,
+    status: 'waiting', // waiting -> full
+    createdAt: Date.now(),
+  });
+
+  onDisconnect(roomRef).remove();
+
+  return { code, uid: user.uid };
+}
+
+/**
+ * Приєднання до існуючої кімнати за кодом.
+ * Повертає { ok: true, code, uid } або { ok: false, error }.
+ */
+export async function joinRoom(rawCode) {
+  if (!isValidCodeFormat(rawCode)) {
     return { ok: false, error: 'Код має складатися з 6 символів' };
   }
-  // Поки немає бекенду — приєднання завжди "успішне" локально.
-  return { ok: true, code: code.trim().toUpperCase() };
+
+  const code = rawCode.trim().toUpperCase();
+  const user = await ensureAnonymousSession();
+  const roomRef = ref(db, `rooms/${code}`);
+  const snapshot = await get(roomRef);
+
+  if (!snapshot.exists()) {
+    return { ok: false, error: 'Кімнату не знайдено' };
+  }
+
+  const room = snapshot.val();
+
+  if (room.hostId === user.uid) {
+    return { ok: false, error: 'Не можна приєднатися до власної кімнати' };
+  }
+  if (room.status !== 'waiting') {
+    return { ok: false, error: 'Кімната вже заповнена' };
+  }
+
+  await update(roomRef, { guestId: user.uid, status: 'full' });
+  return { ok: true, code, uid: user.uid };
+}
+
+/**
+ * Підписка на зміни кімнати в реальному часі.
+ * callback(roomData | null) — null означає, що кімнату видалено.
+ * Повертає функцію відписки.
+ */
+export function watchRoom(code, callback) {
+  const roomRef = ref(db, `rooms/${code}`);
+  onValue(roomRef, (snapshot) => callback(snapshot.exists() ? snapshot.val() : null));
+  return () => off(roomRef);
+}
+
+/**
+ * Хост вручну скасовує/закриває свою кімнату очікування.
+ */
+export async function leaveRoom(code) {
+  await remove(ref(db, `rooms/${code}`));
 }
