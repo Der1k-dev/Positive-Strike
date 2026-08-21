@@ -1,4 +1,4 @@
-import { createRoom, joinRoom } from './rooms.js';
+import { createRoom, joinRoom, watchRoom, leaveRoom } from './rooms.js';
 import {
   signInWithGoogle,
   signOutUser,
@@ -37,12 +37,68 @@ const generateRoomBtn = document.getElementById('generateRoomBtn');
 const roomCodeBox = document.getElementById('roomCodeBox');
 const roomCodeValue = document.getElementById('roomCodeValue');
 const copyCodeBtn = document.getElementById('copyCodeBtn');
+const roomStatus = document.getElementById('roomStatus');
+const cancelRoomBtn = document.getElementById('cancelRoomBtn');
 
-generateRoomBtn.addEventListener('click', () => {
-  const room = createRoom();
-  roomCodeValue.textContent = room.code;
-  roomCodeBox.hidden = false;
-  generateRoomBtn.textContent = 'Згенерувати новий код';
+let activeRoomCode = null;
+let stopWatchingRoom = null;
+
+function stopRoomWatch() {
+  if (stopWatchingRoom) {
+    stopWatchingRoom();
+    stopWatchingRoom = null;
+  }
+}
+
+generateRoomBtn.addEventListener('click', async () => {
+  generateRoomBtn.disabled = true;
+  generateRoomBtn.textContent = 'Створення…';
+  stopRoomWatch();
+
+  try {
+    const room = await createRoom();
+    activeRoomCode = room.code;
+
+    roomCodeValue.textContent = room.code;
+    roomCodeBox.hidden = false;
+    roomStatus.textContent = 'Очікування другого гравця…';
+    roomStatus.classList.remove('room-code-status--ready');
+    generateRoomBtn.textContent = 'Згенерувати новий код';
+
+    stopWatchingRoom = watchRoom(room.code, (data) => {
+      if (!data) {
+        // Кімнату видалено (напр. скасовано з іншої вкладки).
+        roomStatus.textContent = 'Кімнату скасовано.';
+        return;
+      }
+      if (data.status === 'full') {
+        roomStatus.textContent = 'Гравець приєднався! Бій ось-ось почнеться.';
+        roomStatus.classList.add('room-code-status--ready');
+      }
+    });
+  } catch (err) {
+    console.error('Room creation failed:', err);
+    roomStatus.textContent = 'Не вдалося створити кімнату. Спробуйте ще раз.';
+    roomCodeBox.hidden = false;
+  } finally {
+    generateRoomBtn.disabled = false;
+  }
+});
+
+cancelRoomBtn.addEventListener('click', async () => {
+  if (!activeRoomCode) return;
+  cancelRoomBtn.disabled = true;
+  try {
+    await leaveRoom(activeRoomCode);
+  } catch (err) {
+    console.error('Failed to cancel room:', err);
+  } finally {
+    stopRoomWatch();
+    activeRoomCode = null;
+    roomCodeBox.hidden = true;
+    cancelRoomBtn.disabled = false;
+    generateRoomBtn.textContent = 'Згенерувати код кімнати';
+  }
 });
 
 copyCodeBtn.addEventListener('click', async () => {
@@ -61,25 +117,41 @@ copyCodeBtn.addEventListener('click', async () => {
 
 const joinForm = document.getElementById('joinForm');
 const joinCodeInput = document.getElementById('joinCodeInput');
+const joinSubmitBtn = document.getElementById('joinSubmitBtn');
 const joinError = document.getElementById('joinError');
+const joinedBox = document.getElementById('joinedBox');
 
 joinCodeInput.addEventListener('input', () => {
   joinCodeInput.value = joinCodeInput.value.toUpperCase();
 });
 
-joinForm.addEventListener('submit', (event) => {
+joinForm.addEventListener('submit', async (event) => {
   event.preventDefault();
-  const result = joinRoom(joinCodeInput.value);
 
-  if (!result.ok) {
-    joinError.textContent = result.error;
-    joinError.hidden = false;
-    return;
-  }
-
+  joinSubmitBtn.disabled = true;
+  joinSubmitBtn.textContent = 'Приєднання…';
   joinError.hidden = true;
-  // TODO(крок 3+): перехід у game.html з реальним roomId після підключення Firebase.
-  alert(`Заглушка: приєднання до кімнати ${result.code} буде реалізовано, коли підʼєднаємо Firebase (крок 3).`);
+
+  try {
+    const result = await joinRoom(joinCodeInput.value);
+
+    if (!result.ok) {
+      joinError.textContent = result.error;
+      joinError.hidden = false;
+      return;
+    }
+
+    joinForm.hidden = true;
+    joinedBox.hidden = false;
+    // TODO(крок 8+): перехід у game.html, коли з'явиться бойовий екран.
+  } catch (err) {
+    console.error('Join room failed:', err);
+    joinError.textContent = 'Щось пішло не так. Спробуйте ще раз.';
+    joinError.hidden = false;
+  } finally {
+    joinSubmitBtn.disabled = false;
+    joinSubmitBtn.textContent = 'Приєднатися';
+  }
 });
 
 // ---------- Модалка "Особистий кабінет" ----------
