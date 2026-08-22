@@ -2,7 +2,7 @@
 // Низько-полігональні 3D-моделі юнітів із простих примітивів — той самий
 // лаконічний стиль, що й на референсних скріншотах (кольорові грані, без текстур).
 
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+import * as THREE from "three";
 
 const TEAM_COLORS = { blue: 0x2f6fed, red: 0xd6473f };
 
