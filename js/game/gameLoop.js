@@ -2,7 +2,7 @@
 // ЕТАП 5: карта + розставлені армії обох команд + клік-вибір юніта
 // з показом характеристик. Рух і бій — наступні кроки.
 
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+import * as THREE from "three";
 import { createScene } from './scene.js';
 import { generateMap } from './mapGenerator.js';
 import { createTerrainSampler } from './terrain.js';
