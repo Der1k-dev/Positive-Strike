@@ -4,7 +4,7 @@
 // авіація літає над будь-якою точкою (просто вища за землю).
 // Детерміновано за seed — обидва гравці порахують однакову розстановку локально.
 
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+import * as THREE from "three";
 import { createUnitMesh } from './units.js';
 import { UNIT_TYPES } from '../data/unitDefinitions.js';
 import { createRng } from './noise.js';
