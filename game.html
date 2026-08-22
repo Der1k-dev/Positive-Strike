@@ -18,6 +18,7 @@
     <div class="game-topbar-left">
       <a class="back-link" href="index.html">← До меню</a>
       <span class="room-code-chip" id="roomCodeChip" hidden></span>
+      <span class="side-chip" id="sideChip" hidden></span>
     </div>
     <div class="brand">
       <span class="brand-mark"></span>
@@ -30,6 +31,35 @@
       <div class="scene-container" id="sceneContainer"></div>
     </div>
 
+    <div class="unit-stats-bar" id="unitStatsBar" hidden>
+      <div class="unit-stats-name">
+        <span class="unit-team-dot" id="unitTeamDot"></span>
+        <span id="unitStatsLabel">—</span>
+      </div>
+      <div class="unit-stats-grid">
+        <div class="unit-stat">
+          <span class="unit-stat-label">Health</span>
+          <span class="unit-stat-value" id="statHealth">—</span>
+        </div>
+        <div class="unit-stat">
+          <span class="unit-stat-label">Damage</span>
+          <span class="unit-stat-value" id="statDamage">—</span>
+        </div>
+        <div class="unit-stat">
+          <span class="unit-stat-label">Range</span>
+          <span class="unit-stat-value" id="statRange">—</span>
+        </div>
+        <div class="unit-stat">
+          <span class="unit-stat-label">Speed</span>
+          <span class="unit-stat-value" id="statSpeed">—</span>
+        </div>
+        <div class="unit-stat">
+          <span class="unit-stat-label">Cost</span>
+          <span class="unit-stat-value" id="statCost">—</span>
+        </div>
+      </div>
+    </div>
+
     <div class="map-toolbar">
       <div class="map-legend" id="mapLegend"></div>
       <div class="map-actions">
@@ -39,9 +69,9 @@
     </div>
 
     <p class="game-note">
-      Крок 4 з 10 · 3D-карта. Та сама кімната завжди показує однаковий рельєф
-      (детермінована генерація за кодом кімнати). Обертайте камеру мишкою/пальцем,
-      колесо миші — зум. Юніти, будівлі, економіка й бій — на наступних кроках.
+      Крок 5 з 10 · карта з розставленими арміями. Клікніть по юніту, щоб побачити
+      характеристики. Обертайте камеру мишкою/пальцем, колесо — зум.
+      Рух, економіка й бій — на наступних кроках.
     </p>
   </main>
 
@@ -49,8 +79,8 @@
     import { initGame } from './js/game/gameLoop.js';
     import { BIOME_COLORS, BIOME_LABELS, BIOME_LEGEND_ORDER } from './js/data/terrainDefinitions.js';
     import { generateMapSeed } from './js/game/mapGenerator.js';
-    // rooms.js (і, відповідно, Firebase) підвантажується динамічно, лише якщо
-    // в URL є код кімнати — сторінка карти не повинна залежати від мережі/Firebase
+    // rooms.js/auth.js (і, відповідно, Firebase) підвантажуються динамічно,
+    // лише якщо в URL є код кімнати — сторінка карти не залежить від мережі
     // у тестовому режимі без кімнати.
 
     const sceneContainer = document.getElementById('sceneContainer');
@@ -58,6 +88,16 @@
     const seedNoteEl = document.getElementById('seedNote');
     const regenBtn = document.getElementById('regenBtn');
     const roomCodeChip = document.getElementById('roomCodeChip');
+    const sideChip = document.getElementById('sideChip');
+
+    const unitStatsBar = document.getElementById('unitStatsBar');
+    const unitTeamDot = document.getElementById('unitTeamDot');
+    const unitStatsLabel = document.getElementById('unitStatsLabel');
+    const statHealth = document.getElementById('statHealth');
+    const statDamage = document.getElementById('statDamage');
+    const statRange = document.getElementById('statRange');
+    const statSpeed = document.getElementById('statSpeed');
+    const statCost = document.getElementById('statCost');
 
     // Легенда типів місцевості.
     for (const id of BIOME_LEGEND_ORDER) {
@@ -68,15 +108,34 @@
       legendEl.appendChild(item);
     }
 
+    function updateStatsBar(info) {
+      if (!info) {
+        unitStatsBar.hidden = true;
+        return;
+      }
+      unitStatsBar.hidden = false;
+      unitTeamDot.style.background = info.team === 'red' ? 'var(--red)' : 'var(--blue)';
+      unitStatsLabel.textContent = info.label;
+      statHealth.textContent = info.stats.health;
+      statDamage.textContent = info.stats.damage;
+      statRange.textContent = info.stats.range.toFixed(2);
+      statSpeed.textContent = `${info.stats.speed.toFixed(2)}/s`;
+      statCost.textContent = `$${info.stats.cost.toLocaleString('en-US')}`;
+    }
+
     const params = new URLSearchParams(location.search);
     const roomCode = params.get('code');
 
     let currentGame = null;
 
-    function startWithSeed(seed) {
+    function startWithSeed(seed, cameraSide) {
       if (currentGame) currentGame.dispose();
       seedNoteEl.textContent = `Seed: ${seed}`;
-      currentGame = initGame(sceneContainer, seed);
+      updateStatsBar(null);
+      currentGame = initGame(sceneContainer, seed, {
+        onSelectUnit: updateStatsBar,
+        cameraSide,
+      });
     }
 
     async function init() {
@@ -86,27 +145,44 @@
         regenBtn.hidden = true; // карта кімнати фіксована — регенерація лише для тестового режиму
 
         try {
-          const { getRoomOnce } = await import('./js/rooms.js');
+          const [{ getRoomOnce }, { ensureAnonymousSession }] = await Promise.all([
+            import('./js/rooms.js'),
+            import('./js/auth.js'),
+          ]);
           const room = await getRoomOnce(roomCode);
+
           if (room && typeof room.mapSeed === 'number') {
-            startWithSeed(room.mapSeed);
+            let cameraSide = 'blue';
+            try {
+              const user = await ensureAnonymousSession();
+              if (user.uid === room.guestId) cameraSide = 'red';
+              if (user.uid === room.hostId || user.uid === room.guestId) {
+                sideChip.textContent = cameraSide === 'red' ? 'Ви: червоні' : 'Ви: сині';
+                sideChip.style.borderColor = cameraSide === 'red' ? 'var(--red)' : 'var(--blue)';
+                sideChip.style.color = cameraSide === 'red' ? 'var(--red)' : 'var(--blue)';
+                sideChip.hidden = false;
+              }
+            } catch (err) {
+              console.error('Failed to resolve player side:', err);
+            }
+            startWithSeed(room.mapSeed, cameraSide);
             return;
           }
         } catch (err) {
           console.error('Failed to load room for map seed:', err);
         }
         // Кімнату не знайдено, нема mapSeed, або немає мережі — все одно показуємо карту.
-        startWithSeed(generateMapSeed());
+        startWithSeed(generateMapSeed(), 'blue');
         return;
       }
 
       // Тестовий режим без кімнати: seed із URL (?seed=123) або випадковий.
       const seedParam = params.get('seed');
-      startWithSeed(seedParam ? Number(seedParam) : generateMapSeed());
+      startWithSeed(seedParam ? Number(seedParam) : generateMapSeed(), 'blue');
     }
 
     regenBtn.addEventListener('click', () => {
-      startWithSeed(generateMapSeed());
+      startWithSeed(generateMapSeed(), 'blue');
     });
 
     init();
