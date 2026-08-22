@@ -3,7 +3,7 @@
 // той самий рельєф, тому обом гравцям у кімнаті не потрібно передавати
 // карту по мережі — досить синхронізувати лише число (seed).
 
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+import * as THREE from "three";
 import { createTerrainSampler } from './terrain.js';
 import { createRng } from './noise.js';
 import {
