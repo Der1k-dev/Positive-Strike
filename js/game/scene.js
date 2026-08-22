@@ -3,8 +3,8 @@
 // Не знає нічого про карту чи юніти — лише "порожня студія", у яку
 // інші модулі додають об'єкти через scene.add(...).
 
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
-import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 const BACKGROUND_COLOR = 0x0a0e14; // збігається з --bg у css/main.css
 
