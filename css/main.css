@@ -344,6 +344,37 @@ body {
 .cancel-room-btn:hover { border-color: var(--red); color: var(--red); }
 .cancel-room-btn:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 
+.view-map-link {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--blue);
+  text-decoration: none;
+}
+
+.view-map-link:hover { text-decoration: underline; }
+.view-map-link:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+.battle-transition {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--panel-border);
+}
+
+.battle-transition-text {
+  margin: 0 0 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--teal);
+}
+
+.battle-transition-btn {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+}
+
 .join-form {
   display: flex;
   gap: 10px;
