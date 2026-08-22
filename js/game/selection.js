@@ -3,7 +3,7 @@
 // Поки що це лише "огляд" (показ характеристик), без обмеження за власником —
 // обмеження "можна клікати тільки по своїх" з'явиться разом із боєм (крок 7).
 
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+import * as THREE from "three";
 
 /**
  * @param {object} params
