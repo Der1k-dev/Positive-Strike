@@ -9,6 +9,31 @@ import {
   getMatchHistory,
 } from './auth.js';
 
+// ---------- Автоперехід на карту бою з відліком ----------
+
+const BATTLE_TRANSITION_SECONDS = 3;
+
+/**
+ * Показує "Перехід через N…" і за N секунд сама переходить на game.html.
+ * Кнопка лишається клікабельною одразу — можна не чекати відліку.
+ */
+function startBattleTransition({ textEl, code }) {
+  let secondsLeft = BATTLE_TRANSITION_SECONDS;
+  textEl.textContent = `Перехід на карту бою через ${secondsLeft}…`;
+
+  const intervalId = setInterval(() => {
+    secondsLeft -= 1;
+    if (secondsLeft <= 0) {
+      clearInterval(intervalId);
+      window.location.href = `game.html?code=${code}`;
+      return;
+    }
+    textEl.textContent = `Перехід на карту бою через ${secondsLeft}…`;
+  }, 1000);
+
+  return () => clearInterval(intervalId);
+}
+
 // ---------- Перемикання "Створити / Приєднатися" ----------
 
 const tabCreate = document.getElementById('tabCreate');
@@ -39,9 +64,13 @@ const roomCodeValue = document.getElementById('roomCodeValue');
 const copyCodeBtn = document.getElementById('copyCodeBtn');
 const roomStatus = document.getElementById('roomStatus');
 const cancelRoomBtn = document.getElementById('cancelRoomBtn');
+const hostBattleTransition = document.getElementById('hostBattleTransition');
+const hostBattleCountdown = document.getElementById('hostBattleCountdown');
+const hostViewMapLink = document.getElementById('hostViewMapLink');
 
 let activeRoomCode = null;
 let stopWatchingRoom = null;
+let stopHostCountdown = null;
 
 function stopRoomWatch() {
   if (stopWatchingRoom) {
@@ -50,10 +79,18 @@ function stopRoomWatch() {
   }
 }
 
+function stopHostTransition() {
+  if (stopHostCountdown) {
+    stopHostCountdown();
+    stopHostCountdown = null;
+  }
+}
+
 generateRoomBtn.addEventListener('click', async () => {
   generateRoomBtn.disabled = true;
   generateRoomBtn.textContent = 'Створення…';
   stopRoomWatch();
+  stopHostTransition();
 
   try {
     const room = await createRoom();
@@ -63,17 +100,26 @@ generateRoomBtn.addEventListener('click', async () => {
     roomCodeBox.hidden = false;
     roomStatus.textContent = 'Очікування другого гравця…';
     roomStatus.classList.remove('room-code-status--ready');
+    hostBattleTransition.hidden = true;
+    hostViewMapLink.href = `game.html?code=${room.code}`;
     generateRoomBtn.textContent = 'Згенерувати новий код';
 
     stopWatchingRoom = watchRoom(room.code, (data) => {
       if (!data) {
         // Кімнату видалено (напр. скасовано з іншої вкладки).
         roomStatus.textContent = 'Кімнату скасовано.';
+        hostBattleTransition.hidden = true;
+        stopHostTransition();
         return;
       }
-      if (data.status === 'full') {
-        roomStatus.textContent = 'Гравець приєднався! Бій ось-ось почнеться.';
+      if (data.status === 'full' && hostBattleTransition.hidden) {
+        roomStatus.textContent = 'Гравець приєднався!';
         roomStatus.classList.add('room-code-status--ready');
+        hostBattleTransition.hidden = false;
+        stopHostCountdown = startBattleTransition({
+          textEl: hostBattleCountdown,
+          code: room.code,
+        });
       }
     });
   } catch (err) {
@@ -94,6 +140,7 @@ cancelRoomBtn.addEventListener('click', async () => {
     console.error('Failed to cancel room:', err);
   } finally {
     stopRoomWatch();
+    stopHostTransition();
     activeRoomCode = null;
     roomCodeBox.hidden = true;
     cancelRoomBtn.disabled = false;
@@ -120,6 +167,8 @@ const joinCodeInput = document.getElementById('joinCodeInput');
 const joinSubmitBtn = document.getElementById('joinSubmitBtn');
 const joinError = document.getElementById('joinError');
 const joinedBox = document.getElementById('joinedBox');
+const guestBattleCountdown = document.getElementById('guestBattleCountdown');
+const guestViewMapLink = document.getElementById('guestViewMapLink');
 
 joinCodeInput.addEventListener('input', () => {
   joinCodeInput.value = joinCodeInput.value.toUpperCase();
@@ -143,7 +192,11 @@ joinForm.addEventListener('submit', async (event) => {
 
     joinForm.hidden = true;
     joinedBox.hidden = false;
-    // TODO(крок 8+): перехід у game.html, коли з'явиться бойовий екран.
+    guestViewMapLink.href = `game.html?code=${result.code}`;
+    startBattleTransition({
+      textEl: guestBattleCountdown,
+      code: result.code,
+    });
   } catch (err) {
     console.error('Join room failed:', err);
     joinError.textContent = 'Щось пішло не так. Спробуйте ще раз.';
