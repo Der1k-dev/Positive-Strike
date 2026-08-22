@@ -45,6 +45,10 @@
             <button class="copy-btn" id="copyCodeBtn" type="button" aria-label="Скопіювати код">Копіювати</button>
           </div>
           <p class="room-code-status" id="roomStatus">Очікування другого гравця…</p>
+          <div class="battle-transition" id="hostBattleTransition" hidden>
+            <p class="battle-transition-text" id="hostBattleCountdown"></p>
+            <a class="cta-btn battle-transition-btn" id="hostViewMapLink" href="#">Перейти на карту бою →</a>
+          </div>
           <button class="cancel-room-btn" id="cancelRoomBtn" type="button">Скасувати кімнату</button>
         </div>
       </section>
@@ -68,8 +72,12 @@
         <div class="room-code-box" id="joinedBox" hidden>
           <span class="room-code-label">Ви в кімнаті</span>
           <p class="room-code-status room-code-status--ready" id="joinedStatus">
-            Приєднано! Очікуємо початку бою — з'явиться на наступних кроках.
+            Приєднано!
           </p>
+          <div class="battle-transition" id="guestBattleTransition">
+            <p class="battle-transition-text" id="guestBattleCountdown"></p>
+            <a class="cta-btn battle-transition-btn" id="guestViewMapLink" href="#">Перейти на карту бою →</a>
+          </div>
         </div>
       </section>
     </div>
