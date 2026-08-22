@@ -37,6 +37,15 @@
   padding: 5px 10px;
 }
 
+.side-chip {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 5px 10px;
+}
+
 .game-stage {
   position: relative;
   z-index: 1;
@@ -68,6 +77,66 @@
   width: 100% !important;
   height: 100% !important;
   touch-action: none; /* даємо OrbitControls самій обробляти жести на тачскрінах */
+}
+
+.unit-stats-bar {
+  width: 100%;
+  max-width: 1080px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 14px 20px;
+}
+
+.unit-stats-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+.unit-team-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--blue);
+  flex-shrink: 0;
+}
+
+.unit-stats-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+}
+
+.unit-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 64px;
+}
+
+.unit-stat-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.unit-stat-value {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
 }
 
 .map-toolbar {
