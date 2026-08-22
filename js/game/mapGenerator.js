@@ -24,10 +24,10 @@ const tmpColor = new THREE.Color();
 /**
  * Генерує групу Three.js-об'єктів: рельєф з кольором за біомом,
  * напівпрозору воду поверх океанських западин, і ліс з InstancedMesh.
+ * Приймає опційний вже створений sampler, щоб не рахувати шум двічі,
+ * коли той самий seed потрібен ще й для розстановки юнітів.
  */
-export function generateMap(seed) {
-  const sampler = createTerrainSampler(seed);
-
+export function generateMap(seed, sampler = createTerrainSampler(seed)) {
   const group = new THREE.Group();
   group.name = 'map';
   group.add(generateTerrainMesh(sampler));
