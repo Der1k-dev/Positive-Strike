@@ -8,7 +8,7 @@ import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/exampl
 
 const BACKGROUND_COLOR = 0x0a0e14; // збігається з --bg у css/main.css
 
-export function createScene(container) {
+export function createScene(container, { cameraSide = 'blue' } = {}) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(BACKGROUND_COLOR);
   scene.fog = new THREE.Fog(BACKGROUND_COLOR, 160, 340);
@@ -19,7 +19,8 @@ export function createScene(container) {
     0.1,
     1000
   );
-  camera.position.set(0, 95, 115);
+  const zSign = cameraSide === 'red' ? -1 : 1;
+  camera.position.set(0, 95, 115 * zSign);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
